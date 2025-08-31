@@ -1,30 +1,17 @@
-<<<<<<< HEAD
-# Password-strength-checker
-=======
-# Pass Checker
+# 🔐 Password Strength Checker
 
-This is a simple web application for checking password strength. It provides instant feedback to users about the quality of their password.
-[Demo](https://password-strength-checkerbyalmas.netlify.app/)
+A simple and interactive web application for checking the strength of a password.  
+It provides **instant feedback** on password quality, entropy, and suggestions for improvement.  
 
-## Features
-- Password strength validation
-- User-friendly interface
-- Instant feedback
+👉 **[Live Demo](https://password-strength-checkerbyalmas.netlify.app/)**  
 
-## Getting Started
+---
 
-1. Clone the repository:
-   ```bash
-   git clone <your-repo-url>
-   ```
-2. Open `passchecker.html` in your browser.
+## ✨ Features
+- ✅ Real-time password strength validation  
+- ✅ Visual strength meter with entropy calculation  
+- ✅ Instant feedback with suggestions for stronger passwords  
+- ✅ Clean and user-friendly interface  
+- ✅ Fully client-side (no data is stored or uploaded)  
 
-## Usage
-Simply enter your password in the input field and get feedback on its strength.
-
-## Contributing
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
-## License
-This project is open source and available under the MIT License.
->>>>>>> d897298 (Added password strength checker and README documentation)
+---
