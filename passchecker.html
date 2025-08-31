@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Password Strength Checker</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --good: #16a34a;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+      --accent: #6366f1;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, "Noto Sans", sans-serif;
+      background: radial-gradient(1200px 800px at 20% -10%, #1f2937 0%, var(--bg) 60%);
+      color: var(--text);
+    }
+    .container {
+      max-width: 760px;
+      margin: 7vh auto 12vh;
+      padding: 24px;
+    }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+    h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: 0.2px; }
+    p.subtitle { color: var(--muted); margin-top: 6px; }
+
+    label { display: block; font-weight: 600; margin: 18px 0 10px; }
+    .field {
+      position: relative;
+    }
+    input[type="password"], input[type="text"] {
+      width: 100%;
+      padding: 16px 48px 16px 16px;
+      background: #0b1220;
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.25);
+    }
+    .toggle {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: #111827; border: 1px solid rgba(255,255,255,0.1);
+      color: var(--muted);
+      padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 12px;
+    }
+
+    .meter {
+      height: 12px; width: 100%; background: rgba(255,255,255,0.06);
+      border-radius: 999px; margin-top: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08);
+    }
+    .meter > div {
+      height: 100%; width: 0%; background: linear-gradient(90deg, #ef4444, #f59e0b, #16a34a, #22c55e);
+      transition: width 220ms ease;
+    }
+
+    .legend { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: var(--muted); }
+    .legend b { color: var(--text); }
+
+    .row { display: grid; grid-template-columns: 1fr; gap: 18px; margin-top: 24px; }
+    @media (min-width: 800px) { .row { grid-template-columns: 1fr 1fr; } }
+
+    .pill {
+      display: inline-flex; align-items: center; gap: 8px; margin: 6px 8px 0 0; padding: 6px 10px;
+      border-radius: 999px; font-size: 12px; border: 1px solid rgba(255,255,255,0.1);
+      color: var(--muted);
+    }
+    .pill.good { color: #86efac; border-color: rgba(34,197,94,0.35); }
+    .pill.warn { color: #fde68a; border-color: rgba(245,158,11,0.35); }
+    .pill.bad  { color: #fca5a5; border-color: rgba(239,68,68,0.35); }
+
+    .checks { list-style: none; padding: 0; margin: 0; }
+    .checks li { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+    .checks .status { width: 10px; height: 10px; border-radius: 50%; background: #6b7280; }
+    .checks .status.ok { background: var(--good); }
+    .checks .status.warn { background: var(--warn); }
+    .checks .status.bad { background: var(--bad); }
+
+    .muted { color: var(--muted); }
+    .footer { text-align: center; margin-top: 18px; color: var(--muted); font-size: 12px; }
+    .copy {
+      margin-left: 8px; font-size: 12px; padding: 6px 10px; border-radius: 8px; cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.1); background: #111827; color: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>🔐 Password Strength Checker</h1>
+      <p class="subtitle">Type a password to see strength, entropy, and suggestions. Nothing is uploaded; all checks run locally in your browser.</p>
+
+      <label for="pw">Password</label>
+      <div class="field">
+        <input id="pw" type="password" placeholder="Enter a password…" autocomplete="off" />
+        <button id="toggle" class="toggle" aria-label="Toggle visibility">Show</button>
+      </div>
+
+      <div class="meter" aria-hidden="true"><div id="bar"></div></div>
+      <div class="legend"><span>Strength: <b id="strengthLabel">—</b></span><span>Entropy: <b id="entropy">0</b> bits</span></div>
+
+      <div class="row">
+        <div>
+          <h3>Checks</h3>
+          <ul class="checks" id="checks"></ul>
+        </div>
+        <div>
+          <h3>Suggestions</h3>
+          <div id="suggestions" class="muted">Start typing to see suggestions…</div>
+        </div>
+      </div>
+
+      <div class="footer">
+        Tip: Aim for <b>12–16+ characters</b> with a mix of upper/lowercase, numbers, and symbols.
+        <button id="copy" class="copy">Copy Analysis</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Utility helpers ---
+    const log2 = (n) => Math.log(n) / Math.log(2);
+
+    function charSetSize(pw) {
+      let size = 0;
+      if (/[a-z]/.test(pw)) size += 26;
+      if (/[A-Z]/.test(pw)) size += 26;
+      if (/[0-9]/.test(pw)) size += 10;
+      if (/[^\da-zA-Z\s]/.test(pw)) size += 32; // rough symbol count
+      if (/\s/.test(pw)) size += 1; // space considered
+      return Math.max(size, 1);
+    }
+
+    function entropyBits(pw) {
+      if (!pw) return 0;
+      const size = charSetSize(pw);
+      return Math.round(pw.length * log2(size));
+    }
+
+    function classifyStrength(bits) {
+      if (bits < 28) return { label: 'Very Weak', pct: 10, cls: 'bad' };
+      if (bits < 36) return { label: 'Weak', pct: 25, cls: 'bad' };
+      if (bits < 60) return { label: 'Fair', pct: 55, cls: 'warn' };
+      if (bits < 80) return { label: 'Strong', pct: 80, cls: 'good' };
+      return { label: 'Very Strong', pct: 100, cls: 'good' };
+    }
+
+    // Common patterns & weak terms
+    const weakTerms = [
+      'password','pass','letmein','qwerty','asdf','zxcv','admin','user','welcome','iloveyou',
+      'abc123','qwerty123','qwertyuiop','monkey','dragon','football'
+    ];
+    const yearRegex = /(19|20)\d{2}/; // 1900–2099
+
+    function repeatedChars(pw) {
+      return /(.)\1{2,}/.test(pw); // 3+ of same char
+    }
+
+    function sequentialPatterns(pw) {
+      const seqs = ['0123456789','abcdefghijklmnopqrstuvwxyz','qwertyuiop','asdfghjkl','zxcvbnm'];
+      const l = pw.toLowerCase();
+      return seqs.some(seq => seq.includes(l) || seq.split('').reverse().join('').includes(l));
+    }
+
+    function evaluate(pw) {
+      const bits = entropyBits(pw);
+      const cls = classifyStrength(bits);
+
+      const checks = [
+        { id: 'len', label: `Length ≥ 12`, ok: pw.length >= 12 },
+        { id: 'lower', label: 'Has lowercase', ok: /[a-z]/.test(pw) },
+        { id: 'upper', label: 'Has uppercase', ok: /[A-Z]/.test(pw) },
+        { id: 'digit', label: 'Has number', ok: /\d/.test(pw) },
+        { id: 'sym', label: 'Has symbol', ok: /[^\da-zA-Z\s]/.test(pw) },
+        { id: 'space', label: 'No leading/trailing spaces', ok: pw === pw.trim() },
+        { id: 'repeat', label: 'No repeated characters (3+)', ok: !repeatedChars(pw) },
+        { id: 'sequential', label: 'Not a simple sequence', ok: !sequentialPatterns(pw) },
+        { id: 'weakword', label: 'No common weak word', ok: !weakTerms.some(w => pw.toLowerCase().includes(w)) },
+        { id: 'year', label: 'Avoid birth-like years', ok: !yearRegex.test(pw) },
+      ];
+
+      const suggestions = [];
+      if (pw.length && pw.length < 12) suggestions.push('Use at least 12–16 characters.');
+      if (!/[a-z]/.test(pw)) suggestions.push('Add lowercase letters.');
+      if (!/[A-Z]/.test(pw)) suggestions.push('Add uppercase letters.');
+      if (!/\d/.test(pw)) suggestions.push('Include numbers.');
+      if (!/[^\da-zA-Z\s]/.test(pw)) suggestions.push('Include symbols like !@#$%.');
+      if (repeatedChars(pw)) suggestions.push('Avoid repeating the same character 3+ times.');
+      if (sequentialPatterns(pw)) suggestions.push('Avoid simple sequences like 1234 or qwerty.');
+      if (weakTerms.some(w => pw.toLowerCase().includes(w))) suggestions.push('Avoid common words like "password" or "admin".');
+      if (yearRegex.test(pw)) suggestions.push('Avoid using years (e.g., 2002, 1999).');
+      if (pw && pw !== pw.trim()) suggestions.push('Remove spaces at the start or end.');
+      if (bits >= 60 && pw.length < 16) suggestions.push('Longer is stronger—try 16+ characters.');
+
+      return { bits, cls, checks, suggestions };
+    }
+
+    // --- DOM wiring ---
+    const pwEl = document.getElementById('pw');
+    const barEl = document.getElementById('bar');
+    const labelEl = document.getElementById('strengthLabel');
+    const entropyEl = document.getElementById('entropy');
+    const checksEl = document.getElementById('checks');
+    const suggEl = document.getElementById('suggestions');
+    const toggleEl = document.getElementById('toggle');
+    const copyEl = document.getElementById('copy');
+
+    function render() {
+      const pw = pwEl.value;
+      const { bits, cls, checks, suggestions } = evaluate(pw);
+
+      // Meter
+      const { pct, label } = classifyStrength(bits);
+      barEl.style.width = pct + '%';
+      labelEl.textContent = pw ? label : '—';
+      entropyEl.textContent = bits;
+
+      // Checks list
+      checksEl.innerHTML = '';
+      checks.forEach(c => {
+        const li = document.createElement('li');
+        const dot = document.createElement('span');
+        dot.className = 'status ' + (c.ok ? 'ok' : (c.id === 'len' && pw.length >= 8 ? 'warn' : 'bad'));
+        const txt = document.createElement('span');
+        txt.textContent = c.label;
+        li.appendChild(dot); li.appendChild(txt);
+        checksEl.appendChild(li);
+      });
+
+      // Suggestions
+      if (!pw) {
+        suggEl.textContent = 'Start typing to see suggestions…';
+      } else if (suggestions.length === 0) {
+        suggEl.innerHTML = '<span class="pill good">Looks solid. Consider using a passphrase for even more strength.</span>';
+      } else {
+        suggEl.innerHTML = suggestions.map(s => `<span class="pill warn">${s}</span>`).join('');
+      }
+    }
+
+    pwEl.addEventListener('input', render);
+    window.addEventListener('DOMContentLoaded', render);
+
+    toggleEl.addEventListener('click', () => {
+      const isPw = pwEl.type === 'password';
+      pwEl.type = isPw ? 'text' : 'password';
+      toggleEl.textContent = isPw ? 'Hide' : 'Show';
+      pwEl.focus();
+    });
+
+    copyEl.addEventListener('click', async () => {
+      const pw = pwEl.value;
+      const { bits, cls, checks, suggestions } = evaluate(pw);
+      const passed = checks.filter(c => c.ok).length + '/' + checks.length;
+      const text = `Password Analysis\n\nStrength: ${classifyStrength(bits).label}\nEntropy: ${bits} bits\nChecks passed: ${passed}\n\nSuggestions:\n- ${suggestions.join('\n- ') || 'None. Looks good!'}\n`;
+      try {
+        await navigator.clipboard.writeText(text);
+        copyEl.textContent = 'Copied!';
+        setTimeout(() => (copyEl.textContent = 'Copy Analysis'), 1500);
+      } catch (_) {
+        alert('Copy failed. You can select the text on screen instead.');
+      }
+    });
+  </script>
+</body>
+</html>
