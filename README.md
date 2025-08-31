@@ -4,6 +4,7 @@
 # Pass Checker
 
 This is a simple web application for checking password strength. It provides instant feedback to users about the quality of their password.
+.[Demo](https://password-strength-checkerbyalmas.netlify.app/).
 
 ## Features
 - Password strength validation
